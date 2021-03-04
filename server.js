@@ -10,6 +10,7 @@ const { v4:uuidV4 } = require('uuid')
 
 app.set('view engine', 'ejs')
 app.use(express.static('public'))
+app.use(requireHTTPS);
 
 app.get('/', (req,res) => {
     res.redirect(`/${uuidV4()}`);
@@ -30,6 +31,14 @@ io.on('connection', (socket) => {
         })
     })
 })
+
+function requireHTTPS(req, res, next) {
+    // The 'x-forwarded-proto' check is for Heroku
+    if (!req.secure && req.get('x-forwarded-proto') !== 'https') {
+      return res.redirect('https://' + req.get('host') + req.url);
+    }
+    next();
+  }
 
 server.listen(process.env.PORT);
 
