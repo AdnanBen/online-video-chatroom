@@ -10,6 +10,8 @@
     <script src="https://unpkg.com/peerjs@1.3.1/dist/peerjs.min.js" defer></script>
     <script src="/socket.io/socket.io.js" defer></script>
     <script src="script.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0"></script>
     <title>Document</title>
     <style>
         #video-grid {
@@ -36,9 +38,16 @@
 
     <p></p>
 
+    <input type="checkbox" id="bgremove" name="vehicle1" value="Bike">
+    <label for="bgremove"> Remove background aka kill pc </label><br>
+
+    <p></p>
+
     <button id = "myBtn" type="button" onclick="myFunction()">Join call</button>
 
     <button type="button" onclick="myFunction2()">Leave call</button>
+
+   
 
 
     <p></p>

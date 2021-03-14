@@ -1,8 +1,20 @@
 const socket = io('/');
 const videoGrid = document.getElementById('video-grid');
 
+const canvas = document.createElement('canvas');
+canvas.width = 640
+canvas.height = 480
+const video2 = document.getElementById('video2');
+let backgroundDarkeningMask;
 
 const myVideo = document.createElement('video');
+const myVideo2 = document.createElement('video');
+myVideo.width = 640;
+myVideo.height = 480;
+
+
+
+
 const peers = {};
 
 var myId = null;
@@ -11,10 +23,6 @@ var n = false;
 var retry = false;
 
 const videoSelect = document.querySelector('select#videoSource');
-
-const sleep = (milliseconds) => {
-    return new Promise(resolve => setTimeout(resolve, milliseconds))
-  }
 
 
 
@@ -43,6 +51,8 @@ function handleError(error) {
   console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
 }
 
+var ctx = canvas.getContext('2d');
+
 //videoSelect.value = localStorage.getItem("someVarKey");
 
 
@@ -69,17 +79,40 @@ function start() {
         console.log("peer open here " + id);
     })
 
+
     navigator.mediaDevices.getUserMedia(constraints)
     .then(function(stream) {
+        removeBackground = document.getElementById("bgremove").checked;
         console.log('Got stream with constraints:', constraints);
         console.log(videoSource);
         console.log("TEST");
-        addVideoStream(myVideo, stream)
+
+  
+        //addVideoStream(myVideo, stream)
+        //addVideoStream(myVideo2, stream2)
         //const video = document.createElement('video');
-         
+
+        if (removeBackground) {
+            stream2 = canvas.captureStream();
+            setInterval(removeBg, 100); 
+            myVideo.srcObject = stream;
+            myVideo.addEventListener('loadedmetadata', () => {
+            myVideo.play();
+            addVideoStream(myVideo2, stream2);})
+            } else {
+            addVideoStream(myVideo, stream)
+        }
+
          
         myPeer.on('call', function(call) {
-            call.answer(stream);
+            if (removeBackground) {
+                call.answer(stream2)
+                console.log("this one");
+            } else {
+                call.answer(stream)
+                console.log("there one");
+            }
+            //call.answer(stream);
             console.log("answered");
             
             const video = document.createElement('video');
@@ -93,29 +126,15 @@ function start() {
             })
         })
 
-        myPeer.on('connection', function(conn) { 
-            console.log("Here maybe?");
-            conn.on('open', function() {
-                console.log("Here miracly?");
-                // Receive messages
-                conn.on('data', function(data) {
-                  console.log("but miracly?");
-                  console.log('Received', data);
-                });
-              
-                // Send messages
-                conn.send('Hello!');
-              });
-         });
 
         socket.on('user-connected', function(userId) {
             console.log("Received connection from " + userId);
-            var conn = myPeer.connect(userId);
-            conn.on('open', function() {
-                conn.send(myId);
-              });
             console.log("user connected" + userId);
-            connectToNewUser(userId, stream)
+            if (removeBackground) {
+                connectToNewUser(userId, stream2)
+            } else {
+                connectToNewUser(userId, stream)
+            }
         })
         
         socket.on('user-disconnected', function(userId) {
@@ -127,7 +146,6 @@ function start() {
     
     })
 
-  
    
 }
 
@@ -159,7 +177,7 @@ function connectToNewUser(userId, stream) {
     setTimeout(function() {   
     if (answered == false) {          
         connectToNewUser(userId, stream);            
-    } }, 1000);
+    } }, 5000);
 }
 
 
@@ -199,3 +217,61 @@ function myFunction2() {
     Refresh()
 }
 
+async function removeBg() {
+    //  ? Loading BodyPix w/ various parameters
+    const net = await bodyPix.load({
+        architecture: 'MobileNetV1',
+        outputStride: 16,
+        multiplier: 0.5,
+        quantBytes: 4
+    });
+
+    // ? Segmentation occurs here, taking video frames as the input
+    const segmentation = await net.segmentPerson(myVideo, {
+        flipHorizontal: false,
+        internalResolution: 'medium',
+        segmentationThreshold: 0.5
+    });
+
+    // Convert the segmentation into a mask to darken the background.
+    const foregroundColor = { r: 0, g: 0, b: 0, a: 255 };
+    const backgroundColor = { r: 0, g: 0, b: 0, a: 0 };
+    backgroundDarkeningMask = bodyPix.toMask(segmentation, foregroundColor, backgroundColor, false);
+    compositeFrame(backgroundDarkeningMask);
+}
+
+async function compositeFrame(backgroundDarkeningMask) {
+    //video2.srcObject = canvas.captureStream();
+    if (!backgroundDarkeningMask) return;
+    // grab canvas holding the bg image
+    //var ctx = canvas.getContext('2d');
+    // composite the segmentation mask on top
+    
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.putImageData(backgroundDarkeningMask, 0, 0);
+    // composite the video frame
+
+    
+    ctx.globalCompositeOperation = 'source-in';
+
+
+    ctx.drawImage(myVideo, 0, 0, 640, 480);
+
+    ctx.globalCompositeOperation = 'destination-atop'
+    ctx.fillStyle = "green";
+    ctx.fillRect(0, 0, 640, 480);    
+
+
+    //video2.srcObject = canvas.captureStream();
+}
+
+function update(){
+  ctx.globalCompositeOperation = 'destination-over';
+  ctx.putImageData(backgroundDarkeningMask, 0, 0);
+  ctx.globalCompositeOperation = 'source-in';
+  ctx.drawImage(video, 0, 0, 640, 480); 
+  ctx.globalCompositeOperation = 'destination-atop'
+  ctx.fillStyle = "green";ctx.fillRect(0, 0, 640, 480);    
+  requestAnimationFrame(update);
+  
+  }
