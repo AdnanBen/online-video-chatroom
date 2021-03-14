@@ -99,6 +99,8 @@ function start() {
             myVideo.addEventListener('loadedmetadata', () => {
             myVideo.play();
             addVideoStream(myVideo2, stream2);})
+            myVideo2.addEventListener('loadedmetadata', () => {
+                update();})
             } else {
             addVideoStream(myVideo, stream)
         }
@@ -269,9 +271,10 @@ function update(){
   ctx.globalCompositeOperation = 'destination-over';
   ctx.putImageData(backgroundDarkeningMask, 0, 0);
   ctx.globalCompositeOperation = 'source-in';
-  ctx.drawImage(video, 0, 0, 640, 480); 
+  ctx.drawImage(myVideo, 0, 0, 640, 480); 
   ctx.globalCompositeOperation = 'destination-atop'
-  ctx.fillStyle = "green";ctx.fillRect(0, 0, 640, 480);    
+  ctx.fillStyle = "green";
+  ctx.fillRect(0, 0, 640, 480);    
   requestAnimationFrame(update);
   
   }
