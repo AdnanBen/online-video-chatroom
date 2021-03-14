@@ -100,7 +100,8 @@ function start() {
             myVideo.play();
             addVideoStream(myVideo2, stream2);})
             myVideo2.addEventListener('loadedmetadata', () => {
-                update();})
+                //update()
+                ;})
             } else {
             addVideoStream(myVideo, stream)
         }
