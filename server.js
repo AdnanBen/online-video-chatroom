@@ -3,7 +3,7 @@ const app = express();
 const server = require('http').Server(app);
 const io = require('socket.io')(server)
 
-// const https = require('https');
+const https = require('https');
 const fs = require('fs');
 
 const { v4:uuidV4 } = require('uuid')
@@ -11,7 +11,7 @@ const { v4:uuidV4 } = require('uuid')
 app.set('view engine', 'ejs')
 app.use(express.static('public'))
 
-//app.use(requireHTTPS);
+app.use(requireHTTPS);
 
 
 app.get('/', (req,res) => {
