@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Background Removal</title>
     <!-- Load TensorFlow.js -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@1.2"></script>
     <!-- Load BodyPix -->
@@ -11,20 +12,17 @@
 </head>
 
 <body>
+    <h1>Background Removal w/ BodyPix</h1>
     <div class="container parent">
         <div class="video box">
-            <video id="video" width="640px" height="480px">
+            <video id="video" autoplay width="640px" height="480px">
 
             </video>
         </div>
-        <div class="video box2">
-            <video id="video2" autoplay width="640px" height="480px">
-
-            </video>
-        </div>
-
         <div class="removed box">
+            <canvas id="canvas" autoplay width="640px" height="480px">
 
+            </canvas>
         </div>
     </div>
     <style>
@@ -34,9 +32,8 @@
         }
 
         #video,
-        #video2,
         #canvas {
-            border: 0px solid black;
+            border: 2px solid black;
             text-align: center;
         }
 
@@ -58,7 +55,7 @@
             margin: 5px;
         }
     </style>
-    <script defer src="main.js"></script>
+    <script defer src="public/script.js"></script>
 </body>
 
 </html>
