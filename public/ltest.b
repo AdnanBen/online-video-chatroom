@@ -12,7 +12,7 @@ const myVideo2 = document.createElement('video');
 myVideo.width = 640;
 myVideo.height = 480;
 
-counter = 0
+
 
 
 const peers = {};
@@ -180,14 +180,9 @@ function connectToNewUser(userId, stream) {
 
     setTimeout(function() {   
     if (answered == false) {  
-        call.close();    
-        counter++
-        if (counter >= 5) {
-            localStorage.setItem("errorOccured", true);
-            location.reload()
-        }    
+        call.close();        
         connectToNewUser(userId, stream);            
-    } }, 2000);
+    } }, 5000);
 }
 
 
@@ -273,11 +268,6 @@ async function compositeFrame(net) {
 
 
     //video2.srcObject = canvas.captureStream();
-}
-
-if (localStorage.getItem("errorOccured")) {
-    alert("Sorry! A connection error occured, please rejoin the call.");
-    localStorage.setItem("errorOccured", false);
 }
 
 function update(){
