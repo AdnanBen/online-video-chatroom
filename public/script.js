@@ -13,6 +13,7 @@ myVideo.width = 640;
 myVideo.height = 480;
 
 counter = 0
+let timeout = "false"
 
 
 const peers = {};
@@ -183,7 +184,7 @@ function connectToNewUser(userId, stream) {
         call.close();    
         counter++
         if (counter >= 5) {
-            localStorage.setItem("errorOccured", true);
+            localStorage.setItem("errorOccured", "true");
             location.reload()
         }    
         connectToNewUser(userId, stream);            
@@ -275,9 +276,9 @@ async function compositeFrame(net) {
     //video2.srcObject = canvas.captureStream();
 }
 
-if (localStorage.getItem("errorOccured")) {
+if (localStorage.getItem("errorOccured") == "true") {
     alert("Sorry! A connection error occured, please rejoin the call.");
-    localStorage.setItem("errorOccured", false);
+    localStorage.setItem("errorOccured", "false");
 }
 
 function update(){
