@@ -180,7 +180,7 @@ function connectToNewUser(userId, stream) {
     setTimeout(function() {   
     if (answered == false) {          
         connectToNewUser(userId, stream);            
-    } }, 5000);
+    } }, 10000);
 }
 
 
