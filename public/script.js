@@ -94,13 +94,14 @@ function start() {
 
         if (removeBackground) {
             stream2 = canvas.captureStream();
-            setInterval(removeBg, 100); 
+            removeBg();
             myVideo.srcObject = stream;
             myVideo.addEventListener('loadedmetadata', () => {
             myVideo.play();
             addVideoStream(myVideo2, stream2);})
             myVideo2.addEventListener('loadedmetadata', () => {
-                update();})
+                update()
+                ;})
             } else {
             addVideoStream(myVideo, stream)
         }
@@ -224,26 +225,25 @@ async function removeBg() {
     const net = await bodyPix.load({
         architecture: 'MobileNetV1',
         outputStride: 16,
-        multiplier: 0.5,
-        quantBytes: 4
+        multiplier: 1,
+        quantBytes: 2
     });
 
-    // ? Segmentation occurs here, taking video frames as the input
+    setInterval(function () { compositeFrame(net) }, 150);
+}
+
+async function compositeFrame(net) {
+
     const segmentation = await net.segmentPerson(myVideo, {
         flipHorizontal: false,
-        internalResolution: 'medium',
+        internalResolution: 'high',
         segmentationThreshold: 0.5
     });
 
-    // Convert the segmentation into a mask to darken the background.
     const foregroundColor = { r: 0, g: 0, b: 0, a: 255 };
     const backgroundColor = { r: 0, g: 0, b: 0, a: 0 };
     backgroundDarkeningMask = bodyPix.toMask(segmentation, foregroundColor, backgroundColor, false);
-    compositeFrame(backgroundDarkeningMask);
-    window.requestAnimationFrame(removeBg);
-}
 
-async function compositeFrame(backgroundDarkeningMask) {
     //video2.srcObject = canvas.captureStream();
     if (!backgroundDarkeningMask) return;
     // grab canvas holding the bg image
