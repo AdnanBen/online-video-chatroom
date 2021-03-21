@@ -6,7 +6,7 @@ const io = require('socket.io')(server)
 const https = require('https');
 const fs = require('fs');
 const { v4:uuidV4 } = require('uuid')
-//app.use(requireHTTPS);
+app.use(requireHTTPS);
 
 app.set('view engine', 'ejs')
 app.use(express.static('public'))

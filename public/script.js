@@ -4,6 +4,7 @@ const videoGrid = document.getElementById('video-grid');
 const canvas = document.createElement('canvas');
 canvas.width = 640
 canvas.height = 480
+var ctx = canvas.getContext('2d')
 
 const myVideo = document.createElement('video');
 myVideo.width = 640;
@@ -17,9 +18,8 @@ let timeout = "false"
 let backgroundRemovalMask;
 
 var myId = null;
-var n = false;
+var callActive = false;
 var retry = false;
-var ctx = canvas.getContext('2d');
 
 const constraints = {
     audio: false,
@@ -86,13 +86,10 @@ function start() {
         myId = id;
     })
 
-    // Oen media stream
+    
     navigator.mediaDevices.getUserMedia(constraints)
     .then(function(stream) {
         removeBackground = document.getElementById("bgremove").checked;
-
-
-
         if (removeBackground) {
             backgroundRemovedStream = canvas.captureStream();
             removeBg();
@@ -197,7 +194,7 @@ function addVideoStream(video, stream) {
 
 // Save selected webcam and reload page
 function Refresh() {
-    if (n == true) {
+    if (callActive == true) {
         myPeer.destroy();
         var someVarName = videoSelect.value;
         localStorage.setItem("someVarKey", someVarName);
@@ -217,7 +214,7 @@ function joinCall(button) {
     start()
     document.getElementById("joinButton").disabled = true;
     document.getElementById("leaveButton").disabled = false;
-    n = true;
+    callActive = true;
 }
 
 function leaveCall() {
