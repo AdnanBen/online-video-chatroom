@@ -4,31 +4,32 @@ const videoGrid = document.getElementById('video-grid');
 const canvas = document.createElement('canvas');
 canvas.width = 640
 canvas.height = 480
-const video2 = document.getElementById('video2');
-let backgroundDarkeningMask;
 
 const myVideo = document.createElement('video');
-const myVideo2 = document.createElement('video');
 myVideo.width = 640;
 myVideo.height = 480;
 
-counter = 0
-let timeout = "false"
+const myBackgroundlessVideo = document.createElement('video');
+const videoSelect = document.querySelector('select#videoSource');
 
+let counter = 0
+let timeout = "false"
+let backgroundRemovalMask;
+
+var myId = null;
+var n = false;
+var retry = false;
+var ctx = canvas.getContext('2d');
+
+const constraints = {
+    audio: false,
+    video: {deviceId: videoSource ? {exact: videoSource} : undefined}
+};
 
 const peers = {};
 
-var myId = null;
-
-var n = false;
-var retry = false;
-
-const videoSelect = document.querySelector('select#videoSource');
-
-
-
+// Populate drop down selection with video devices
 function gotDevices(deviceInfos) {
-    console.log("Startf");
   for (let i = 0; i !== deviceInfos.length; ++i) {
     const deviceInfo = deviceInfos[i];
     const option = document.createElement('option');
@@ -36,7 +37,6 @@ function gotDevices(deviceInfos) {
 if (deviceInfo.kind === 'videoinput') {
       option.text = deviceInfo.label || `camera ${videoSelect.length + 1}`;
       videoSelect.appendChild(option);
-      console.log("added");
     } 
   }
   if (localStorage.getItem("someVarKey")) {
@@ -46,108 +46,104 @@ if (deviceInfo.kind === 'videoinput') {
 
 }
 
-navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
+// Ask for camera permission and run gotDevices for all currently available video devices
+navigator.mediaDevices.getUserMedia(constraints)
+    .then(function(stream) {
+        navigator.mediaDevices.enumerateDevices().then(gotDevices).catch(handleError);
+        myVideo.srcObject = null;
+        stream.getTracks().forEach( (track) => {
+            console.log("here");
+            track.stop();
+        });
+    });
+
+
 
 function handleError(error) {
   console.log('navigator.MediaDevices.getUserMedia error: ', error.message, error.name);
 }
 
-var ctx = canvas.getContext('2d');
-
-//videoSelect.value = localStorage.getItem("someVarKey");
-
 
 function start() {
 
-    //document.getElementById(demo).disabled = 'true'
+    // Create new peer by querying peerjs server
 
     myPeer = new Peer(undefined, {
         host: 'presentr-peerjs-server.herokuapp.com',
         secure: 'true'
     })
 
-
     const videoSource = videoSelect.value;
 
     const constraints = {
         audio: false,
-        video: {deviceId: videoSource ? {exact: videoSource} : undefined}
+        video: {width: 640, height: 480, deviceId: videoSource ? {exact: videoSource} : undefined}
     };
 
+    // On join room, notify server
     myPeer.on('open', function(id) {
         socket.emit('join-room', ROOM_ID, id);
         myId = id;
-        console.log("peer open here " + id);
     })
 
-
+    // Oen media stream
     navigator.mediaDevices.getUserMedia(constraints)
     .then(function(stream) {
         removeBackground = document.getElementById("bgremove").checked;
-        console.log('Got stream with constraints:', constraints);
-        console.log(videoSource);
-        console.log("TEST");
 
-  
-        //addVideoStream(myVideo, stream)
-        //addVideoStream(myVideo2, stream2)
-        //const video = document.createElement('video');
+
 
         if (removeBackground) {
-            stream2 = canvas.captureStream();
+            backgroundRemovedStream = canvas.captureStream();
             removeBg();
             myVideo.srcObject = stream;
             myVideo.addEventListener('loadedmetadata', () => {
             myVideo.play();
-            addVideoStream(myVideo2, stream2);})
-            myVideo2.addEventListener('loadedmetadata', () => {
+            addVideoStream(myBackgroundlessVideo, backgroundRemovedStream);})
+            myBackgroundlessVideo.addEventListener('loadedmetadata', () => {
                 update()
                 ;})
             } else {
             addVideoStream(myVideo, stream)
         }
 
-         
+        
+        // on user receiving call from other users
         myPeer.on('call', function(call) {
             if (removeBackground) {
-                call.answer(stream2)
-                console.log("this one");
+                call.answer(backgroundRemovedStream)
             } else {
                 call.answer(stream)
-                console.log("there one");
             }
-            //call.answer(stream);
-            console.log("answered");
             
             const video = document.createElement('video');
+
+            // on recieving stream from new connected user
             call.on('stream', function(userVideoStream) {
-                console.log("added");
                 addVideoStream(video, userVideoStream);
             })
+
+            // on call with user ending
             call.on('close', () => {
-                console.log("close");
-                //video.remove();
+                // maybe do something
             })
         })
 
 
+        // On new user connecting to room
         socket.on('user-connected', function(userId) {
-            console.log("Received connection from " + userId);
-            console.log("user connected" + userId);
+            // Call user
             if (removeBackground) {
-                connectToNewUser(userId, stream2)
+                callNewUser(userId, backgroundRemovedStream)
             } else {
-                connectToNewUser(userId, stream)
+                callNewUser(userId, stream)
             }
         })
         
+        // On new user disconnecting from room
         socket.on('user-disconnected', function(userId) {
-            console.log("here");
             if(peers[userId]) peers[userId].close();
-            //video.remove();
         }) 
-
-    
     })
 
    
@@ -161,15 +157,13 @@ function end() {
 
 // auxillary functions
 
-function connectToNewUser(userId, stream) {
+function callNewUser(userId, stream) {
     answered = false;
-    const call = myPeer.call(userId, stream)
     const video = document.createElement('video')
-    console.log("connectonewuser");
-    console.log("CALL ID " + userId);
+    const call = myPeer.call(userId, stream)
+
     call.on('stream', function(userVideoStream) {
         answered = true;
-        console.log("stream started? " + userId);
         addVideoStream(video, userVideoStream);
     })
     call.on('close', () => {
@@ -184,10 +178,11 @@ function connectToNewUser(userId, stream) {
         call.close();    
         counter++
         if (counter >= 5) {
+            // Reload page for user with connection failed message
             localStorage.setItem("errorOccured", "true");
             location.reload()
         }    
-        connectToNewUser(userId, stream);            
+        callNewUser(userId, stream);            
     } }, 2000);
 }
 
@@ -198,9 +193,9 @@ function addVideoStream(video, stream) {
         video.play();
     })
     videoGrid.append(video);
-    console.log("appended");
 }
 
+// Save selected webcam and reload page
 function Refresh() {
     if (n == true) {
         myPeer.destroy();
@@ -211,25 +206,27 @@ function Refresh() {
     }
 }
 
+// If user tries to change camera while in a call
 videoSelect.onchange = Refresh;
 
 //start()
 
 
 
-function myFunction(button) {
+function joinCall(button) {
     start()
-    document.getElementById("myBtn").disabled = true;
-    console.log("here22");
+    document.getElementById("joinButton").disabled = true;
+    document.getElementById("leaveButton").disabled = false;
     n = true;
 }
 
-function myFunction2() {
-    Refresh()
+function leaveCall() {
+    Refresh();
 }
 
 async function removeBg() {
-    //  ? Loading BodyPix w/ various parameters
+
+    // Load bodypix model to client machine
     const net = await bodyPix.load({
         architecture: 'MobileNetV1',
         outputStride: 16,
@@ -237,10 +234,11 @@ async function removeBg() {
         quantBytes: 2
     });
 
-    setInterval(function () { compositeFrame(net) }, 150);
+    
+    setInterval(function () { createFrame(net) }, 120);
 }
 
-async function compositeFrame(net) {
+async function createFrame(net) {
 
     const segmentation = await net.segmentPerson(myVideo, {
         flipHorizontal: false,
@@ -250,40 +248,26 @@ async function compositeFrame(net) {
 
     const foregroundColor = { r: 0, g: 0, b: 0, a: 255 };
     const backgroundColor = { r: 0, g: 0, b: 0, a: 0 };
-    backgroundDarkeningMask = bodyPix.toMask(segmentation, foregroundColor, backgroundColor, false);
+    backgroundRemovalMask = bodyPix.toMask(segmentation, foregroundColor, backgroundColor, false);
 
-    //video2.srcObject = canvas.captureStream();
-    if (!backgroundDarkeningMask) return;
-    // grab canvas holding the bg image
-    //var ctx = canvas.getContext('2d');
-    // composite the segmentation mask on top
-    
+    if (!backgroundRemovalMask) return;
+
     ctx.globalCompositeOperation = 'destination-over';
-    ctx.putImageData(backgroundDarkeningMask, 0, 0);
-    // composite the video frame
-
-    
+    ctx.putImageData(backgroundRemovalMask, 0, 0);
+  
     ctx.globalCompositeOperation = 'source-in';
-
-
     ctx.drawImage(myVideo, 0, 0, 640, 480);
 
     ctx.globalCompositeOperation = 'destination-atop'
     ctx.fillStyle = "green";
     ctx.fillRect(0, 0, 640, 480);    
 
-
-    //video2.srcObject = canvas.captureStream();
 }
 
-if (localStorage.getItem("errorOccured") == "true") {
-    alert("Sorry! A connection error occured, please rejoin the call.");
-    localStorage.setItem("errorOccured", "false");
-}
-
+// Ensure camera fps independent from speed of new background removal mask
 function update(){
   ctx.globalCompositeOperation = 'destination-over';
-  ctx.putImageData(backgroundDarkeningMask, 0, 0);
+  ctx.putImageData(backgroundRemovalMask, 0, 0);
   ctx.globalCompositeOperation = 'source-in';
   ctx.drawImage(myVideo, 0, 0, 640, 480); 
   ctx.globalCompositeOperation = 'destination-atop'
@@ -292,3 +276,13 @@ function update(){
   window.requestAnimationFrame(update);
   
   }
+
+// Initialisation
+
+document.getElementById("leaveButton").disabled = true;
+
+if (localStorage.getItem("errorOccured") == "true") {
+    alert("Sorry! A connection error occured, please rejoin the call.");
+    localStorage.setItem("errorOccured", "false");
+}
+

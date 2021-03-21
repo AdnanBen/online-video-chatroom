@@ -30,25 +30,27 @@
 <body>
     <div id = "container"></div>
 
-    <p>Welcome to the site</p>
+    <p><b>Welcome to your video communication room. Please share the page link with other presenters.</b>
+        <br><br> Current fully supported browsers: Chrome</p>
 
+    <br>
+    
     <div class="select">
         <label for="videoSource">Video source: </label><select id="videoSource"></select>
     </div>
 
     <p></p>
 
-    <input type="checkbox" id="bgremove" name="vehicle1" value="Bike">
-    <label for="bgremove"> Remove background aka kill pc </label><br>
+    <input type="checkbox" id="bgremove">
+    <label for="bgremove"> Remove background (Recommended only for mid to high end computers) </label><br>
 
-    <p></p>
+    <br>
 
-    <button id = "myBtn" type="button" onclick="myFunction()">Join call</button>
+    <button id = "joinButton" type="button" onclick="joinCall()">Join call</button>
+    <button id = "leaveButton" type="button" onclick="leaveCall()">Leave call</button>
 
-    <button type="button" onclick="myFunction2()">Leave call</button>
-
-
-    <p></p>
+    <br>
+    <br>
 
     <div id="video-grid"></div>
 </body>
