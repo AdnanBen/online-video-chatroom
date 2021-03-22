@@ -69,7 +69,7 @@ function start() {
     // Create new peer by querying peerjs server
 
     myPeer = new Peer(undefined, {
-        host: 'presentr-peerjs-server.herokuapp.com',
+        host: 'vpe-peerjs-server.herokuapp.com',
         secure: 'true'
     })
 
@@ -129,7 +129,7 @@ function start() {
 
         // On new user connecting to room
         socket.on('user-connected', function(userId) {
-            // Call user
+            // Call new user
             if (removeBackground) {
                 callNewUser(userId, backgroundRemovedStream)
             } else {
@@ -275,7 +275,6 @@ function update(){
   }
 
 // Initialisation
-
 document.getElementById("leaveButton").disabled = true;
 
 if (localStorage.getItem("errorOccured") == "true") {

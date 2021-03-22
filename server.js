@@ -16,13 +16,13 @@ app.get('/', (req,res) => {
     res.redirect(`/${uuidV4()}`);
 })
 
-// Set room id
+// Set unique URL as room id
 app.get('/:room', (req, res) => {
     res.render('room', { roomId: req.params.room });
 })
 
-// On user connects to room
 io.on('connection', (socket) => {
+    // On new user connects to room
     socket.on('join-room', function (roomId, userId) {
         socket.join(roomId);
         // Broadcast to all other users in room
